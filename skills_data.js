@@ -1,12 +1,12 @@
 // AI Skills Marketplace Data - UPDATED
-// 更新时间: 2026/3/31 00:00:00
-// 总数: 103个Skill (完整数据)
-// 新增: 7个Skill (商业巨头技能包)
+// 更新时间: 2026/4/1 00:00:00
+// 总数: 108个Skill (完整数据)
+// 新增: 5个Skill (历史军事商业技能包)
 
 const skillsData = {
-  "generated": "2026-03-31T00:00:00.000Z",
-  "total": 103,
-  "averageRating": "4.68",
+  "generated": "2026-04-01T00:00:00.000Z",
+  "total": 108,
+  "averageRating": "4.70",
   "skills": [
     {
       "id": "safety-margin-calculator",
@@ -2898,6 +2898,82 @@ const skillsData = {
       "commercialPotential": "$150-800M/年"
     },
     {
+      "id": "cyrus-empire-system",
+      "name": "居鲁士大帝帝国治理系统",
+      "nameEn": "Cyrus Empire Governance System",
+      "author": "居鲁士大帝",
+      "authorEn": "Cyrus the Great",
+      "created": "2026-04-01",
+      "version": "1.0.0",
+      "tags": ["empire", "governance", "multi-cultural", "federal"],
+      "rating": 4.5,
+      "pricing": {"personal": 149, "professional": 999, "enterprise": 3999},
+      "file": "skills/cyrus-empire-system/SKILL.md",
+      "sizeKB": 8.5,
+      "description": "Satrapy分权治理 + 多元文化包容 + 皇家道路网络 = 洲际帝国管理系统",
+      "coreFormula": "Empire_Stability = (Decentralized_Power × Cultural_Inclusivity) + (Infrastructure_Network + Communication_Speed)",
+      "scenarios": ["跨国企业管理", "多区域治理", "文化整合", "联邦制设计"],
+      "uniqueValue": "人类历史上第一个洲际帝国，统治2000多万平方公里、33个民族",
+      "commercialPotential": "$200-400M/年"
+    },
+    {
+      "id": "fanli-business-system",
+      "name": "范蠡经商系统",
+      "nameEn": "Fan Li Business System",
+      "author": "范蠡",
+      "authorEn": "Fan Li",
+      "created": "2026-04-01",
+      "version": "1.0.0",
+      "tags": ["business", "investment", "cycle", "strategy"],
+      "rating": 5.0,
+      "pricing": {"personal": 89, "professional": 499, "enterprise": 2499},
+      "file": "skills/fanli-business-system/SKILL.md",
+      "sizeKB": 7.8,
+      "description": "积着之理 + 待乏原则 + 逆周期投资 = 中国商业理论奠基",
+      "coreFormula": "Capital_Accumulation = (Timing_Precision × Asset_Selection) + (Cycle_Prediction + Risk_Control)",
+      "scenarios": ["投资决策", "商业周期预判", "资本积累", "逆向投资"],
+      "uniqueValue": "三度成巨富，三散于贫交，中国商圣",
+      "commercialPotential": "$200-400M/年"
+    },
+    {
+      "id": "haier-ren-dan-he-yi",
+      "name": "海尔人单合一自组织经营模式",
+      "nameEn": "Haier Ren-Dan-He-Yi Model",
+      "author": "张瑞敏",
+      "authorEn": "Zhang Ruimin",
+      "created": "2026-04-01",
+      "version": "1.0.0",
+      "tags": ["organization", "management", "transformation", "platform"],
+      "rating": 4.8,
+      "pricing": {"personal": 99, "professional": 499, "enterprise": 2999},
+      "file": "skills/haier-ren-dan-he-yi/SKILL.md",
+      "sizeKB": 7.5,
+      "description": "人单合一 + 小微自组织 + 链群合约 = 科层制替代方案",
+      "coreFormula": "Employee_Value = (User_Satisfaction × Market_Value) - Internal_Cost",
+      "scenarios": ["企业转型", "组织变革", "平台型组织", "自组织设计"],
+      "uniqueValue": "唯一连续入选哈佛案例的中国企业（9个案例）",
+      "commercialPotential": "$100-200M/年"
+    },
+    {
+      "id": "hannibal-military-system",
+      "name": "汉尼拔军事指挥系统",
+      "nameEn": "Hannibal Military Command System",
+      "author": "汉尼拔·巴卡",
+      "authorEn": "Hannibal Barca",
+      "created": "2026-04-01",
+      "version": "1.0.0",
+      "tags": ["military", "strategy", "tactics", "leadership"],
+      "rating": 4.8,
+      "pricing": {"personal": 129, "professional": 699, "enterprise": 3499},
+      "file": "skills/hannibal-military-system/SKILL.md",
+      "sizeKB": 8.2,
+      "description": "双重包围战术 + 阿尔卑斯奇袭 + 心理战 = 以少胜多教科书",
+      "coreFormula": "Victory_Probability = (Tactical_Innovation × Terrain_Advantage) + (Intelligence_Mislead + Morale_Supremacy)",
+      "scenarios": ["竞争战略", "危机管理", "不对称竞争", "领导力培养"],
+      "uniqueValue": "坎尼战役歼灭战教科书，16年未尝一败",
+      "commercialPotential": "$150-300M/年"
+    },
+    {
       "id": "rockefeller-oil-trust",
       "name": "Rockefeller石油托拉斯与成本控制帝国",
       "nameEn": "Rockefeller Oil Trust & Cost Control Empire",
@@ -2915,6 +2991,25 @@ const skillsData = {
       "scenarios": ["大宗商品行业整合", "成本极致优化", "垂直整合策略", "反垄断风险应对"],
       "uniqueValue": "控制美国90%石油市场，成本比竞争对手低40%",
       "commercialPotential": "$200-800M/年"
+    },
+    {
+      "id": "walmart-retail-system",
+      "name": "Walmart零售帝国系统",
+      "nameEn": "Walmart Retail Empire System",
+      "author": "山姆·沃尔顿",
+      "authorEn": "Sam Walton",
+      "created": "2026-04-01",
+      "version": "1.0.0",
+      "tags": ["retail", "supply-chain", "pricing", "scaling"],
+      "rating": 4.7,
+      "pricing": {"personal": 129, "professional": 699, "enterprise": 3499},
+      "file": "skills/walmart-retail-system/SKILL.md",
+      "sizeKB": 8.0,
+      "description": "EDLP天天平价 + 供应链极致 + 小镇战略 = 全球零售霸主",
+      "coreFormula": "Retail_Price = Purchase_Cost × (1 + Target_Margin) - Efficiency_Bonus",
+      "scenarios": ["零售业扩张", "供应链优化", "定价策略", "连锁管理"],
+      "uniqueValue": "全球最大零售商，小镇包围城市战略",
+      "commercialPotential": "$150-300M/年"
     },
     {
       "id": "starbucks-third-space",

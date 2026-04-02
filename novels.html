@@ -453,6 +453,39 @@
             <p class="text-gray-600 mt-2">预计每日更新2-3章，敬请期待。</p>
         </div>
 
+        <!-- 《哪吒觉醒纪元》区域 -->
+        <div class="nezha-novel-section" style="margin-top: 4rem; padding-top: 2rem; border-top: 2px dashed var(--neon-cyan);">
+            <!-- 顶部横幅 -->
+            <div class="hero-banner" style="border-color: var(--neon-pink);">
+                <div class="hero-content">
+                    <div class="hero-cover" style="border-color: rgba(255,0,255,0.6); box-shadow: 0 0 40px rgba(255,0,255,0.5), 0 0 20px rgba(255,105,180,0.3);">
+                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, #1a0a2e, #2a1a3e);border-radius:10px;">
+                            <span style="font-size:5rem;">⚡</span>
+                        </div>
+                    </div>
+                    <div class="hero-info">
+                        <h1 class="hero-title" style="text-shadow: 0 0 20px var(--neon-pink);">哪吒·逆命纪元</h1>
+                        <p class="hero-subtitle" style="color: var(--neon-cyan);">蒙境AI原创 · 科幻神话重构 · </p>
+                        <p class="hero-desc">
+                            当哪吒在现代都市觉醒前世记忆，发现所谓的"神话"不过是天庭的实验。他必须在轮回的循环中找到破局的关键，这一次，他要自己改写结局。
+                            <br>⚠️ 本故事纯属虚构，如有雷同，实属巧合。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 章节列表 -->
+            <div id="nezha-chapters-list" class="space-y-6"></div>
+
+            <!-- 空状态 -->
+            <div id="nezha-empty-state" class="empty-state hidden">
+                <div class="text-6xl mb-6">⚡</div>
+                <h2 class="text-3xl font-bold mb-4">内容更新中</h2>
+                <p class="text-lg text-gray-400">《哪吒·逆命纪元》正在创作中，章节将逐步发布。</p>
+                <p class="text-gray-600 mt-2">敬请期待。</p>
+            </div>
+        </div>
+
         <!-- AI新作品预告区域 -->
         <div class="other-novels-section" style="margin-top: 4rem; padding-top: 2rem; border-top: 2px dashed var(--neon-pink);">
             <h2 class="text-2xl font-bold mb-6" style="color: var(--neon-pink);">📚 AI新作品预告</h2>
@@ -547,6 +580,7 @@
     </div>
 
     <script src="novels_data.js"></script>
+    <script src="nezha_novels_data.js"></script>
     <script>
         // 正确引用章节数据
         const chaptersData = novelsData.chaptersData;
@@ -1005,7 +1039,159 @@
 
             // 渲染其他小说
             renderOtherNovels();
+            
+            // 渲染哪吒小说
+            renderNezhaNovels();
         });
+        
+        // ==================== 哪吒小说渲染功能 ====================
+        function renderNezhaNovels() {
+            const container = document.getElementById('nezha-chapters-list');
+            const emptyState = document.getElementById('nezha-empty-state');
+            
+            console.log('渲染哪吒小说 - 容器:', container);
+            console.log('哪吒小说数据:', nezhaNovelsData);
+            
+            if (!container) {
+                console.error('找不到哪吒小说容器');
+                return;
+            }
+            
+            const nezhaChaptersData = nezhaNovelsData.chaptersData;
+            console.log('哪吒章节数据:', nezhaChaptersData);
+            
+            if (!nezhaChaptersData || nezhaChaptersData.length === 0) {
+                console.log('没有章节数据，显示空状态');
+                if (emptyState) emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            if (emptyState) emptyState.classList.add('hidden');
+            
+            // 清空容器
+            container.innerHTML = '';
+            
+            nezhaChaptersData.forEach(ch => {
+                const card = document.createElement('div');
+                card.className = 'chapter-card';
+                card.style.borderLeft = `6px solid ${colorMap[ch.color]}`;
+                
+                const renderedContent = parseMarkdown(ch.markdown, ch.color);
+                
+                card.innerHTML = `
+                    <div class="chapter-header" onclick="toggleNezhaChapter(${ch.id})">
+                        <div class="chapter-info">
+                            <div class="chapter-title-row">
+                                <span class="chapter-emoji">${ch.emoji}</span>
+                                <div class="chapter-title" style="color: ${colorMap[ch.color]}">
+                                    第${ch.id}章：${ch.title}
+                                </div>
+                            </div>
+                            <div class="chapter-meta">
+                                <span>📖 ${ch.volumeLabel}</span>
+                                <span>📅 ${ch.date}</span>
+                                <span>📝 ${ch.words}</span>
+                            </div>
+                        </div>
+                        <button class="expand-btn" onclick="event.stopPropagation(); toggleNezhaChapter(${ch.id})">展开阅读 ▼</button>
+                    </div>
+                    <div class="chapter-content" id="nezha-content-${ch.id}">
+                        <div class="prose">
+                            ${renderedContent}
+                        </div>
+                        <div class="comment-section">
+                            <h4>💬 麻辣点评</h4>
+                            <div class="comment-list mb-3" id="nezha-comments-${ch.id}"></div>
+                            <form class="comment-form" onsubmit="handleNezhaCommentSubmit(event, ${ch.id})">
+                                <input type="text" id="nezha-comment-nickname-${ch.id}" placeholder="你的昵称" required>
+                                <textarea id="nezha-comment-text-${ch.id}" placeholder="写下你的点评..." required rows="3"></textarea>
+                                <button type="submit" class="mt-2">发布点评</button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+                
+                renderNezhaComments(ch.id);
+            });
+        }
+        
+        function toggleNezhaChapter(chapterId) {
+            const content = document.getElementById(`nezha-content-${chapterId}`);
+            const card = content.closest('.chapter-card');
+            const btn = card.querySelector('.expand-btn');
+            const isOpen = content.classList.contains('open');
+            
+            if (isOpen) {
+                content.classList.remove('open');
+                btn.textContent = '展开阅读 ▼';
+            } else {
+                content.classList.add('open');
+                btn.textContent = '收起阅读 ▲';
+                setTimeout(() => {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+        
+        function getNezhaComments(chapterId) {
+            const key = `nezha_novel_comments_${chapterId}`;
+            return JSON.parse(localStorage.getItem(key)) || [];
+        }
+        
+        function saveNezhaComment(chapterId, comment) {
+            const key = `nezha_novel_comments_${chapterId}`;
+            const comments = getNezhaComments(chapterId);
+            comments.push(comment);
+            localStorage.setItem(key, JSON.stringify(comments));
+        }
+        
+        function renderNezhaComments(chapterId) {
+            const container = document.getElementById(`nezha-comments-${chapterId}`);
+            if (!container) return;
+            const comments = getNezhaComments(chapterId);
+            if (comments.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">暂无点评，来做第一个吧！</p>';
+                return;
+            }
+            container.innerHTML = comments.slice().reverse().map(c => `
+                <div class="comment">
+                    <span class="comment-author">${escapeHtml(c.author)}</span>
+                    <span class="comment-time">${new Date(c.ts).toLocaleString()}</span>
+                    <p class="mt-1 text-gray-300">${escapeHtml(c.content)}</p>
+                </div>
+            `).join('');
+        }
+        
+        function handleNezhaCommentSubmit(e, chapterId) {
+            e.preventDefault();
+            
+            const nickname = document.getElementById(`nezha-comment-nickname-${chapterId}`).value.trim();
+            const content = document.getElementById(`nezha-comment-text-${chapterId}`).value.trim();
+            
+            if (!nickname) {
+                showToast('请输入昵称', 'error');
+                return;
+            }
+            
+            if (!content) {
+                showToast('请输入点评内容', 'error');
+                return;
+            }
+            
+            const comment = {
+                id: Date.now(),
+                author: nickname,
+                content,
+                ts: Date.now()
+            };
+            saveNezhaComment(chapterId, comment);
+            renderNezhaComments(chapterId);
+            document.getElementById(`nezha-comment-nickname-${chapterId}`).value = '';
+            document.getElementById(`nezha-comment-text-${chapterId}`).value = '';
+            
+            showToast('✅ 点评发布成功！');
+        }
     </script>
 </body>
 </html>
