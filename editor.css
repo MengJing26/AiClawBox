@@ -1,0 +1,546 @@
+/* 编辑器样式 - 独立于原有样式 */
+
+/* 右键菜单 */
+.editor-context-menu {
+    position: fixed;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 8px 0;
+    z-index: 10000;
+    min-width: 160px;
+    display: none;
+}
+
+.editor-context-menu.show {
+    display: block;
+}
+
+.editor-context-menu-item {
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+    color: #333;
+}
+
+.editor-context-menu-item:hover {
+    background: #f5f5f5;
+}
+
+.editor-context-menu-item.danger {
+    color: #e74c3c;
+}
+
+/* 编辑面板 */
+.editor-panel {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    transition: right 0.3s ease;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-panel.show {
+    right: 0;
+}
+
+.editor-panel-header {
+    padding: 20px;
+    background: #4a90e2;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.editor-panel-title {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.editor-panel-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+}
+
+.editor-panel-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.editor-panel-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.editor-panel-footer {
+    padding: 20px;
+    background: #f5f5f5;
+    border-top: 1px solid #ddd;
+    display: flex;
+    gap: 10px;
+    position: sticky;
+    bottom: 0;
+}
+
+/* 分类项 */
+.editor-category {
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.editor-category-header {
+    background: #f8f9fa;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.editor-category-name {
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+}
+
+.editor-category-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.editor-category-items {
+    padding: 10px;
+}
+
+/* 项目项 */
+.editor-item {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.editor-item:hover {
+    border-color: #4a90e2;
+    box-shadow: 0 2px 4px rgba(74, 144, 226, 0.1);
+}
+
+.editor-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.editor-item-info {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.editor-item-title {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.editor-item-url {
+    color: #666;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.editor-item-actions {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+/* 按钮样式 */
+.editor-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.editor-btn-primary {
+    background: #4a90e2;
+    color: white;
+}
+
+.editor-btn-primary:hover {
+    background: #357abd;
+}
+
+.editor-btn-success {
+    background: #27ae60;
+    color: white;
+}
+
+.editor-btn-success:hover {
+    background: #229954;
+}
+
+.editor-btn-warning {
+    background: #f39c12;
+    color: white;
+}
+
+.editor-btn-warning:hover {
+    background: #e67e22;
+}
+
+.editor-btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.editor-btn-danger:hover {
+    background: #c0392b;
+}
+
+.editor-btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.editor-btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.editor-btn-sm {
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+/* 表单样式 */
+.editor-form {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.editor-form-group {
+    margin-bottom: 15px;
+}
+
+.editor-form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+}
+
+.editor-form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.editor-form-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+}
+
+.editor-form-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 60px;
+    box-sizing: border-box;
+}
+
+.editor-form-textarea:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+}
+
+/* 模态框 */
+.editor-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.editor-modal.show {
+    display: flex;
+}
+
+.editor-modal-content {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.editor-modal-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.editor-modal-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.editor-modal-body {
+    margin-bottom: 20px;
+}
+
+.editor-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* 提示消息 */
+.editor-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #333;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    z-index: 10002;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s;
+}
+
+.editor-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.editor-toast.success {
+    background: #27ae60;
+}
+
+.editor-toast.error {
+    background: #e74c3c;
+}
+
+.editor-toast.warning {
+    background: #f39c12;
+}
+
+/* 拖拽提示 */
+.editor-drag-handle {
+    cursor: move;
+    color: #999;
+    margin-right: 8px;
+}
+
+.editor-drag-handle:hover {
+    color: #4a90e2;
+}
+
+/* 空状态 */
+.editor-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.editor-empty-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+/* 加载状态 */
+.editor-loading {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+/* 遮罩层 */
+.editor-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 9998;
+    display: none;
+}
+
+.editor-overlay.show {
+    display: block;
+}
+
+/* 确认对话框 */
+.editor-confirm {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    z-index: 10003;
+    min-width: 300px;
+    display: none;
+}
+
+.editor-confirm.show {
+    display: block;
+}
+
+.editor-confirm-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.editor-confirm-message {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.editor-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .editor-panel {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .editor-modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+}
+
+/* 编辑触发区域提示 */
+.amz-intro-title, .amz-site-text {
+    position: relative;
+}
+
+/* 在文字左侧添加一个不可见的触发区域 */
+.amz-intro-title::before, .amz-site-text::before {
+    content: '';
+    position: absolute;
+    left: -50px;
+    top: -10px;
+    width: 50px;
+    height: calc(100% + 20px);
+    cursor: context-menu;
+}
+
+/* 鼠标悬停时显示提示 */
+.amz-intro-title:hover::before, .amz-site-text:hover::before {
+    background: rgba(74, 144, 226, 0.05);
+    border-left: 2px solid rgba(74, 144, 226, 0.3);
+}
+
+/* 确保新增项目的样式和原有项目一致 */
+.amz-item .amz-intro {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.amz-item .amz-item-title {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.amz-item .amz-item-intro {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #999;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* 图片上传区域样式 */
+.editor-icon-upload {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.editor-icon-upload .editor-form-input {
+    flex: 1;
+}
+
+.editor-icon-preview {
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.editor-icon-preview img {
+    display: block;
+    margin: 0 auto;
+}
