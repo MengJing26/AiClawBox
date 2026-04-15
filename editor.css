@@ -1,16 +1,50 @@
-/* 编辑器样式 - 独立于原有样式 */
+/**
+ * AiClawBox Editor Styles
+ * 优化版本 - 性能优化和更好的组织结构
+ */
 
-/* 右键菜单 */
+/* ==================== CSS Variables ==================== */
+:root {
+    --editor-primary: #3498db;
+    --editor-success: #27ae60;
+    --editor-warning: #f39c12;
+    --editor-danger: #e74c3c;
+    --editor-info: #17a2b8;
+    
+    --editor-bg: #ffffff;
+    --editor-bg-hover: #f5f5f5;
+    --editor-bg-active: #e8e8e8;
+    --editor-border: #dddddd;
+    --editor-text: #333333;
+    --editor-text-light: #666666;
+    
+    --editor-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --editor-shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    --editor-radius: 8px;
+    --editor-radius-sm: 4px;
+    
+    --editor-transition: 0.2s ease;
+    --editor-transition-fast: 0.15s ease;
+    
+    --editor-z-index-base: 9999;
+    --editor-z-index-menu: 10000;
+    --editor-z-index-modal: 10001;
+}
+
+/* ==================== Context Menu ==================== */
 .editor-context-menu {
     position: fixed;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: var(--editor-bg);
+    border: 1px solid var(--editor-border);
+    border-radius: var(--editor-radius);
+    box-shadow: var(--editor-shadow);
     padding: 8px 0;
-    z-index: 10000;
+    z-index: var(--editor-z-index-menu);
     min-width: 160px;
     display: none;
+    will-change: transform, opacity;
+    animation: fadeIn 0.15s ease;
 }
 
 .editor-context-menu.show {
@@ -20,33 +54,35 @@
 .editor-context-menu-item {
     padding: 10px 20px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background var(--editor-transition-fast);
     font-size: 14px;
-    color: #333;
+    color: var(--editor-text);
+    user-select: none;
 }
 
 .editor-context-menu-item:hover {
-    background: #f5f5f5;
+    background: var(--editor-bg-hover);
 }
 
 .editor-context-menu-item.danger {
-    color: #e74c3c;
+    color: var(--editor-danger);
 }
 
-/* 编辑面板 */
+/* ==================== Editor Panel ==================== */
 .editor-panel {
     position: fixed;
     top: 0;
     right: -400px;
     width: 400px;
     height: 100vh;
-    background: #fff;
+    background: var(--editor-bg);
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-    z-index: 9999;
-    transition: right 0.3s ease;
+    z-index: var(--editor-z-index-base);
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    will-change: right;
 }
 
 .editor-panel.show {
@@ -543,4 +579,154 @@
 .editor-icon-preview img {
     display: block;
     margin: 0 auto;
+}
+
+/* ==================== Animations ==================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-5px);
+    }
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+/* ==================== Utility Classes ==================== */
+.editor-hidden {
+    display: none !important;
+}
+
+.editor-invisible {
+    visibility: hidden;
+    opacity: 0;
+}
+
+.editor-loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.editor-error {
+    animation: shake 0.3s ease;
+}
+
+/* ==================== Performance Optimizations ==================== */
+.editor-panel,
+.editor-modal,
+.editor-overlay,
+.editor-context-menu {
+    /* 启用GPU加速 */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* 减少重绘 */
+.editor-item,
+.editor-btn,
+.editor-form-input {
+    will-change: auto;
+}
+
+/* 平滑滚动 */
+.editor-panel {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 文本渲染优化 */
+.editor-panel,
+.editor-modal {
+    text-rendering: optimizeSpeed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==================== Print Styles ==================== */
+@media print {
+    .editor-panel,
+    .editor-modal,
+    .editor-overlay,
+    .editor-context-menu,
+    .editor-toast {
+        display: none !important;
+    }
+}
+
+/* ==================== Reduced Motion ==================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==================== Dark Mode Support ==================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --editor-bg: #1a1a1a;
+        --editor-bg-hover: #2d2d2d;
+        --editor-bg-active: #3d3d3d;
+        --editor-border: #404040;
+        --editor-text: #e0e0e0;
+        --editor-text-light: #b0b0b0;
+    }
+    
+    .editor-panel,
+    .editor-modal,
+    .editor-context-menu {
+        background: var(--editor-bg);
+        color: var(--editor-text);
+    }
+    
+    .editor-form-input,
+    .editor-form-textarea,
+    .editor-form-select {
+        background: var(--editor-bg-hover);
+        border-color: var(--editor-border);
+        color: var(--editor-text);
+    }
 }

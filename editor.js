@@ -11,7 +11,10 @@
         STORAGE_KEY: 'aiclawbox_editor_data',
         BACKUP_KEY: 'aiclawbox_editor_backup',
         MAX_BACKUP: 5,
-        MAX_STORAGE_SIZE: 4 * 1024 * 1024 // 4MB 最大存储限制
+        MAX_STORAGE_SIZE: 4 * 1024 * 1024, // 4MB 最大存储限制
+        ITEMS_PER_PAGE: 18, // 每页显示数量
+        ANIMATION_DURATION: 200, // 动画持续时间(ms)
+        TOAST_DURATION: 2000 // 提示显示时间(ms)
     };
 
     // ==================== 状态管理 ====================
@@ -75,11 +78,13 @@
             toast.textContent = message;
             document.body.appendChild(toast);
 
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 2000);
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, CONFIG.TOAST_DURATION);
+            });
         },
 
         // 确认对话框
@@ -131,23 +136,38 @@
         extractFromPage() {
             const categories = [];
             const menuItems = document.querySelectorAll('#amz-peg-menu > li');
-            
+
+            console.log('找到菜单项数量:', menuItems.length);
+
             menuItems.forEach((menuItem, index) => {
                 const tabId = menuItem.getAttribute('data-id');
                 const categoryName = menuItem.querySelector('.amz-peg-menu-item').textContent.trim();
-                
+
+                console.log(`处理分类 ${index}:`, categoryName, 'ID:', tabId);
+
                 const tabContent = document.querySelector(`#${tabId}`);
-                if (!tabContent) return;
+                if (!tabContent) {
+                    console.warn(`未找到分类内容区域: #${tabId}`);
+                    // 即使找不到内容区域，也要保留这个分类（可能是空分类）
+                    categories.push({
+                        id: tabId,
+                        name: categoryName,
+                        items: []
+                    });
+                    return;
+                }
 
                 const items = [];
                 const itemElements = tabContent.querySelectorAll('ul.amz-show > li.amz-item');
-                
+
+                console.log(`分类 "${categoryName}" 包含项目数量:`, itemElements.length);
+
                 itemElements.forEach((item) => {
                     const link = item.querySelector('a');
                     const titleEl = item.querySelector('.amz-item-title');
                     const introEl = item.querySelector('.amz-item-intro');
                     const imgEl = item.querySelector('.amz-item-logo img');
-                    
+
                     if (link && titleEl) {
                         items.push({
                             title: titleEl.textContent.trim(),
@@ -165,6 +185,7 @@
                 });
             });
 
+            console.log('提取的分类总数:', categories.length);
             return { categories };
         },
 
@@ -835,7 +856,7 @@
 
         show(title, data, onSave) {
             const isCategory = Object.keys(data).length === 1;
-            
+
             this.element.innerHTML = `
                 <div class="editor-modal-content">
                     <div class="editor-modal-header">
@@ -844,25 +865,29 @@
                     <div class="editor-modal-body">
                         <div class="editor-form">
                             <div class="editor-form-group">
-                                <label class="editor-form-label">名称 *</label>
-                                <input type="text" class="editor-form-input" id="modalName" value="${utils.escapeHtml(data.name || '')}" required>
+                                <label class="editor-form-label">${isCategory ? '分类名称' : '项目名称'} <span style="color: #ff4d4f;">*</span></label>
+                                <input type="text" class="editor-form-input" id="modalName" value="${utils.escapeHtml(data.name || '')}" placeholder="${isCategory ? '例如：常用工具' : '例如：GitHub'}" required>
+                                <div class="editor-form-hint" style="font-size: 12px; color: #999; margin-top: 4px;">${isCategory ? '请输入分类的显示名称' : '请输入项目的显示名称'}</div>
                             </div>
                             ${!isCategory ? `
                                 <div class="editor-form-group">
-                                    <label class="editor-form-label">链接 *</label>
-                                    <input type="url" class="editor-form-input" id="modalUrl" value="${utils.escapeHtml(data.url || '')}" required>
+                                    <label class="editor-form-label">项目链接 <span style="color: #ff4d4f;">*</span></label>
+                                    <input type="url" class="editor-form-input" id="modalUrl" value="${utils.escapeHtml(data.url || '')}" placeholder="https://example.com" required>
+                                    <div class="editor-form-hint" style="font-size: 12px; color: #999; margin-top: 4px;">请输入完整的网址，以 http:// 或 https:// 开头</div>
                                 </div>
                                 <div class="editor-form-group">
-                                    <label class="editor-form-label">描述</label>
-                                    <textarea class="editor-form-textarea" id="modalDescription">${utils.escapeHtml(data.description || '')}</textarea>
+                                    <label class="editor-form-label">项目描述</label>
+                                    <textarea class="editor-form-textarea" id="modalDescription" placeholder="简要描述这个项目或网站的功能和特点">${utils.escapeHtml(data.description || '')}</textarea>
+                                    <div class="editor-form-hint" style="font-size: 12px; color: #999; margin-top: 4px;">可选，建议填写以便用户了解项目内容</div>
                                 </div>
                                 <div class="editor-form-group">
-                                    <label class="editor-form-label">图标</label>
+                                    <label class="editor-form-label">项目图标</label>
                                     <div class="editor-icon-upload">
                                         <input type="url" class="editor-form-input" id="modalIcon" value="${utils.escapeHtml(data.icon || '')}" placeholder="输入图片URL或上传本地图片">
                                         <input type="file" id="modalIconFile" accept="image/*" style="display: none;">
                                         <button type="button" class="editor-btn editor-btn-sm editor-btn-primary" id="uploadIconBtn">上传图片</button>
                                     </div>
+                                    <div class="editor-form-hint" style="font-size: 12px; color: #999; margin-top: 4px;">可选，支持URL或本地上传（建议尺寸：200x200px）</div>
                                     <div class="editor-icon-preview" id="iconPreview" style="margin-top: 10px; ${data.icon ? '' : 'display: none;'}">
                                         <img src="${utils.escapeHtml(data.icon || '')}" style="max-width: 100px; max-height: 100px; border: 1px solid #ddd; border-radius: 4px;">
                                     </div>
@@ -966,8 +991,10 @@
                     name: this.element.querySelector('#modalName').value.trim()
                 };
 
+                // 验证名称
                 if (!result.name) {
-                    utils.showToast('名称不能为空！', 'warning');
+                    utils.showToast(isCategory ? '请输入分类名称！' : '请输入项目名称！', 'warning');
+                    this.element.querySelector('#modalName').focus();
                     return;
                 }
 
@@ -976,8 +1003,17 @@
                     result.description = this.element.querySelector('#modalDescription').value.trim();
                     result.icon = this.element.querySelector('#modalIcon').value.trim();
 
+                    // 验证URL
                     if (!result.url) {
-                        utils.showToast('链接不能为空！', 'warning');
+                        utils.showToast('请输入项目链接！', 'warning');
+                        this.element.querySelector('#modalUrl').focus();
+                        return;
+                    }
+
+                    // 简单的URL格式验证
+                    if (!result.url.startsWith('http://') && !result.url.startsWith('https://')) {
+                        utils.showToast('链接格式不正确，请以 http:// 或 https:// 开头', 'warning');
+                        this.element.querySelector('#modalUrl').focus();
                         return;
                     }
                 }
@@ -1001,6 +1037,41 @@
 
     // ==================== 页面渲染器 ====================
     const pageRenderer = {
+        // 分类图标映射
+        categoryIcons: {
+            '百虾大战': '🦞',
+            '云端部署': '☁️',
+            '教程合集': '📚',
+            '常用AI': '🤖',
+            'Coding Plan': '💻',
+            'Maas平台': '🏭',
+            'AI大模型': '🧠',
+            'Skills市场': '🛒',
+            '综合生态': '🌐',
+            'Agent生态': '🤝',
+            'Agent支付': '💳',
+            '币圈生态': '₿',
+            '交易所': '📊'
+        },
+
+        // 获取分类图标
+        getCategoryIcon(name) {
+            // 检查名称是否已经包含emoji图标
+            const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
+            if (emojiRegex.test(name)) {
+                // 如果已经包含图标，返回空字符串
+                return '';
+            }
+            return this.categoryIcons[name] || '📁';
+        },
+        
+        // 清理分类名称中的图标
+        cleanCategoryName(name) {
+            // 移除常见的emoji图标
+            const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]\s*/gu;
+            return name.replace(emojiRegex, '').trim();
+        },
+
         render(data) {
             // 更新顶部导航菜单
             this.updateTopMenu(data);
@@ -1017,6 +1088,11 @@
 
             menu.innerHTML = '';
             data.categories.forEach((category, index) => {
+                // 清理分类名称，移除可能存在的图标
+                const cleanName = this.cleanCategoryName(category.name);
+                // 获取对应的图标
+                const icon = this.getCategoryIcon(cleanName);
+                
                 const li = document.createElement('li');
                 li.setAttribute('data-sdk-index', index);
                 li.setAttribute('data-id', category.id);
@@ -1025,8 +1101,8 @@
                 li.setAttribute('data-focus', index === 0 ? 'true' : 'false');
                 
                 li.innerHTML = `
-                    <div class="amz-peg-menu-contain" title="${utils.escapeHtml(category.name)}">
-                        <span data-sdk-report="1" class="amz-peg-menu-item">${utils.escapeHtml(category.name)}</span>
+                    <div class="amz-peg-menu-contain" title="${utils.escapeHtml(cleanName)}">
+                        <span data-sdk-report="1" class="amz-peg-menu-item">${icon} ${utils.escapeHtml(cleanName)}</span>
                     </div>
                 `;
                 
@@ -1040,6 +1116,15 @@
 
             previewContent.innerHTML = '';
             data.categories.forEach((category) => {
+                // 清理分类名称，移除可能存在的图标
+                const cleanName = this.cleanCategoryName(category.name);
+                // 获取对应的图标
+                const icon = this.getCategoryIcon(cleanName);
+                
+                // 计算需要多少页（每个最多18个）
+                const itemsPerPage = CONFIG.ITEMS_PER_PAGE;
+                const totalPages = Math.ceil(category.items.length / itemsPerPage);
+                
                 const wrapper = document.createElement('div');
                 wrapper.innerHTML = `
                     <div class="amz-tab-wrapper" data-target-id="${category.id.slice(4)}" id="${category.id}" style="">
@@ -1048,43 +1133,142 @@
                                 <div class="el-scrollbar__wrap el-scrollbar__wrap--hidden-default">
                                     <div class="el-scrollbar__view" style="">
                                         <div class="amz-tab-nav" data-style="0" id="">
-                                            <span class="amz-tab-item" data-font-bold="true" data-sdk-report="1" data-sdk-position="2" data-sdk-index="${utils.escapeHtml(category.name)}-0" style="color: rgb(60, 60, 60);">${utils.escapeHtml(category.name)}</span>
+                                            <span class="amz-tab-item" data-font-bold="true" data-sdk-report="1" data-sdk-position="2" data-sdk-index="${utils.escapeHtml(cleanName)}-0" style="color: rgb(60, 60, 60);">${icon} ${utils.escapeHtml(cleanName)}</span>
+                                            ${totalPages > 1 ? `<div class="pagination-nav" style="display: inline-flex; align-items: center; margin-left: 20px; gap: 8px;"></div>` : ''}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <ul class="amz-show common-style item" data-columns="6" id="normal-top" data-style="2" data-sdk-position="${utils.escapeHtml(category.name)}" style="position: relative;"></ul>
+                        <ul class="amz-show common-style item" data-columns="6" id="normal-top" data-style="2" data-sdk-position="${utils.escapeHtml(cleanName)}" style="position: relative;"></ul>
                     </div>
                 `;
 
                 const ul = wrapper.querySelector('ul.amz-show');
-                category.items.forEach((item, itemIndex) => {
-                    const li = document.createElement('li');
-                    li.setAttribute('data-hidden', 'false');
-                    li.setAttribute('class', 'amz-item');
-                    li.setAttribute('data-style', '2');
-                    li.setAttribute('data-sdk-index', itemIndex);
-                    li.setAttribute('data-sdk-partner-id', '0');
-                    li.setAttribute('data-sdk-pinned', '0');
+                
+                // 如果有分页,添加分页导航按钮
+                if (totalPages > 1) {
+                    const paginationNav = wrapper.querySelector('.pagination-nav');
                     
-                    li.innerHTML = `
-                        <a href="${utils.escapeHtml(item.url)}" target="_blank" data-sdk-report="1" click-action="1" click-image="" rel="nofollow" class="amz-item-2" style="padding: 10px 16px;">
-                            <div class="amz-item-logo">
-                                <img src="${utils.processImagePath(item.icon)}" alt="${utils.escapeHtml(item.title)}-图标">
-                            </div>
-                            <div class="amz-intro">
-                                <p class="amz-item-title" style="color: rgb(68, 68, 68);">${utils.escapeHtml(item.title)}</p>
-                                <p class="amz-item-intro description" title="${utils.escapeHtml(item.description)}">${utils.escapeHtml(item.description)}</p>
-                            </div>
-                        </a>
-                    `;
-                    
-                    ul.appendChild(li);
-                });
+                    // 添加分页按钮
+                    for (let page = 1; page <= totalPages; page++) {
+                        const pageBtn = document.createElement('button');
+                        pageBtn.className = `pagination-btn ${page === 1 ? 'active' : ''}`;
+                        pageBtn.textContent = page;
+                        pageBtn.style.cssText = `
+                            padding: 4px 12px;
+                            border: 1px solid #ddd;
+                            background: ${page === 1 ? '#1890ff' : '#fff'};
+                            color: ${page === 1 ? '#fff' : '#333'};
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            transition: all 0.3s;
+                        `;
+                        
+                        pageBtn.onclick = () => {
+                            // 更新按钮状态
+                            paginationNav.querySelectorAll('.pagination-btn').forEach(btn => {
+                                btn.classList.remove('active');
+                                btn.style.background = '#fff';
+                                btn.style.color = '#333';
+                            });
+                            pageBtn.classList.add('active');
+                            pageBtn.style.background = '#1890ff';
+                            pageBtn.style.color = '#fff';
+                            
+                            // 显示对应页的内容
+                            this.showPage(category.items, page, itemsPerPage, ul);
+                        };
+                        
+                        paginationNav.appendChild(pageBtn);
+                    }
+                }
+                
+                // 显示第一页内容
+                this.showPage(category.items, 1, itemsPerPage, ul);
 
                 previewContent.appendChild(wrapper.firstElementChild);
             });
+        },
+        
+        // 显示指定页的内容
+        showPage(items, page, itemsPerPage, ul) {
+            // 添加淡出效果
+            ul.style.opacity = '0';
+            ul.style.transition = `opacity ${CONFIG.ANIMATION_DURATION / 1000}s ease`;
+            
+            setTimeout(() => {
+                ul.innerHTML = '';
+                
+                const startIndex = (page - 1) * itemsPerPage;
+                const endIndex = Math.min(startIndex + itemsPerPage, items.length);
+                const pageItems = items.slice(startIndex, endIndex);
+                
+                // 判断是否需要固定框架显示(只有超过itemsPerPage个才需要)
+                const needFixedFrame = items.length > itemsPerPage;
+                
+                // 如果需要固定框架,始终显示itemsPerPage个位置;否则按实际数量显示
+                const displayCount = needFixedFrame ? itemsPerPage : pageItems.length;
+                
+                // 使用DocumentFragment优化DOM操作
+                const fragment = document.createDocumentFragment();
+                
+                for (let i = 0; i < displayCount; i++) {
+                    const item = pageItems[i];
+                    const li = this.createItemElement(item, startIndex + i);
+                    fragment.appendChild(li);
+                }
+                
+                ul.appendChild(fragment);
+                
+                // 添加淡入效果
+                requestAnimationFrame(() => {
+                    ul.style.opacity = '1';
+                });
+            }, CONFIG.ANIMATION_DURATION);
+        },
+        
+        // 创建项目元素
+        createItemElement(item, index) {
+            const li = document.createElement('li');
+            li.setAttribute('data-hidden', 'false');
+            li.setAttribute('class', 'amz-item');
+            li.setAttribute('data-style', '2');
+            li.setAttribute('data-sdk-index', index);
+            li.setAttribute('data-sdk-partner-id', '0');
+            li.setAttribute('data-sdk-pinned', '0');
+            
+            if (item) {
+                // 有内容的项目
+                li.innerHTML = `
+                    <a href="${utils.escapeHtml(item.url)}" target="_blank" data-sdk-report="1" click-action="1" click-image="" rel="nofollow" class="amz-item-2" style="padding: 10px 16px;">
+                        <div class="amz-item-logo">
+                            <img src="${utils.processImagePath(item.icon)}" alt="${utils.escapeHtml(item.title)}-图标" loading="lazy">
+                        </div>
+                        <div class="amz-intro">
+                            <p class="amz-item-title" style="color: rgb(68, 68, 68);">${utils.escapeHtml(item.title)}</p>
+                            <p class="amz-item-intro description" title="${utils.escapeHtml(item.description)}">${utils.escapeHtml(item.description)}</p>
+                        </div>
+                    </a>
+                `;
+            } else {
+                // 空白占位框架
+                li.setAttribute('data-empty', 'true');
+                li.innerHTML = `
+                    <div class="amz-item-2" style="padding: 10px 16px; opacity: 0; pointer-events: none;">
+                        <div class="amz-item-logo">
+                            <img src="https://img.amz123.com/upload/index_icon/20210824/empty.png" alt="占位">
+                        </div>
+                        <div class="amz-intro">
+                            <p class="amz-item-title" style="color: rgb(68, 68, 68);">占位</p>
+                            <p class="amz-item-intro description" title="占位">占位</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return li;
         }
     };
 
