@@ -110,12 +110,11 @@
         // 禁用右键菜单
         disableContextMenu() {
             document.addEventListener('contextmenu', (e) => {
-                // 允许编辑器的右键菜单
-                if (e.target.closest('.editor-context-menu, .editor-panel, .editor-modal')) {
+                // 允许编辑器的右键菜单及相关区域
+                if (e.target.closest('.editor-context-menu, .editor-panel, .editor-modal, .amz-intro-title, .amz-site-text')) {
                     return;
                 }
                 e.preventDefault();
-                this.showWarning('右键菜单已禁用');
             });
         },
 

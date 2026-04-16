@@ -32,6 +32,135 @@
     --editor-z-index-modal: 10001;
 }
 
+/* ==================== Global Background Theme ==================== */
+/* 深海蓝绿色调 - 符合龙虾水生主题,体现科技感和专业性 */
+body {
+    background: linear-gradient(135deg, #0a192f 0%, #112240 50%, #1a3a52 100%) !important;
+    background-attachment: fixed !important;
+    min-height: 100vh;
+}
+
+/* 为主要内容区域添加浅蓝灰色背景,替代白色 */
+.amz-body-container,
+.amz-global-preview,
+#amz-header,
+.amz-search-box,
+.amz-body,
+#amz-footer {
+    background: linear-gradient(180deg, #e8f4f8 0%, #d4e8ed 100%) !important;
+}
+
+/* 卡片项目背景优化 - 使用更浅的蓝灰色 */
+.amz-item {
+    background: linear-gradient(135deg, #f0f7fa 0%, #e3eff3 100%) !important;
+    border: 1px solid rgba(10, 25, 47, 0.08) !important;
+    transition: all 0.3s ease !important;
+}
+
+.amz-item:hover {
+    background: linear-gradient(135deg, #ffffff 0%, #f5f9fb 100%) !important;
+    border-color: rgba(10, 25, 47, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(10, 25, 47, 0.15) !important;
+    transform: translateY(-2px);
+}
+
+/* 导航菜单背景 */
+.amz-peg-menu {
+    background: linear-gradient(180deg, #e8f4f8 0%, #d4e8ed 100%) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(10, 25, 47, 0.1) !important;
+}
+
+/* 标签页背景 */
+.amz-tab-wrapper {
+    background: transparent !important;
+}
+
+/* 搜索框背景增强 */
+.amz-search-w {
+    background: linear-gradient(135deg, #f0f7fa 0%, #e3eff3 100%) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(10, 25, 47, 0.1) !important;
+    /* 调整垂直位置,使其与左侧内容居中对齐 */
+    margin-top: auto !important;
+    margin-bottom: auto !important;
+    align-self: center !important;
+}
+
+/* 搜索框容器垂直居中对齐 */
+.amz-search-box {
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* 头部背景 */
+.amz123-header {
+    background: linear-gradient(180deg, #e8f4f8 0%, #d4e8ed 100%) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(10, 25, 47, 0.1) !important;
+}
+
+/* 底部背景 */
+.amz123-footer {
+    background: linear-gradient(180deg, #e8f4f8 0%, #d4e8ed 100%) !important;
+    border-top: 1px solid rgba(10, 25, 47, 0.1) !important;
+}
+
+/* 滚动条样式优化 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(10, 25, 47, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(10, 25, 47, 0.2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(10, 25, 47, 0.3);
+}
+
+/* 底部版权文字字体缩小 */
+.amz-footer-links-group span,
+.amz-footer-links-group a,
+.footer-link-group span,
+.footer-link-group a,
+.amz-copyright span {
+    font-size: 12px !important;
+}
+
+/* 针对移动端底部版权文字 */
+.amz-mobile-footer .footer-link-group span,
+.amz-mobile-footer .footer-link-group a {
+    font-size: 11px !important;
+}
+
+/* 底部版权区域增加右侧内边距,避免遮挡二维码 */
+.amz-footer-links-group,
+.amz-site-and-topic {
+    padding-right: 180px !important;
+}
+
+/* 移动端底部版权区域调整 */
+.amz-mobile-footer {
+    padding-bottom: 20px !important;
+}
+
+/* 确保二维码容器有足够的空间 */
+#qrcode-container {
+    z-index: 1000 !important;
+}
+
+/* 底部footer增加底部内边距,为二维码留出空间 */
+#amz-footer {
+    padding-bottom: 30px !important;
+}
+
 /* ==================== Context Menu ==================== */
 .editor-context-menu {
     position: fixed;

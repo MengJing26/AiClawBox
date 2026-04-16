@@ -1,75 +1,76 @@
 /**
- * 图片加载修复脚本
- * 确保所有图片都能正常显示
+ * 图片加载兜底脚本
+ * 处理 IntersectionObserver 懒加载未覆盖的图片
  */
 (function() {
     'use strict';
 
-    // 页面加载完成后执行
     function fixImages() {
-        // 查找所有使用懒加载的图片
-        const lazyImages = document.querySelectorAll('img[data-raw-src]');
-        
+        var lazyImages = document.querySelectorAll('img[data-raw-src]');
+        var fixed = 0;
+
         lazyImages.forEach(function(img) {
-            const realSrc = img.getAttribute('data-raw-src');
-            if (realSrc && realSrc !== img.src) {
-                // 直接设置真实图片URL
-                img.src = realSrc;
-                
-                // 添加错误处理
-                img.onerror = function() {
-                    console.warn('图片加载失败:', realSrc);
-                    // 如果远程图片加载失败，保持占位图
-                    this.src = 'https://img.amz123.com/upload/index_icon/20210824/empty.png';
-                };
+            var realSrc = img.getAttribute('data-raw-src');
+            // 只处理尚未加载的图片（src 仍为占位图且未被 IntersectionObserver 处理）
+            if (realSrc && realSrc !== img.src && !img.dataset.loaded) {
+                // 检查图片是否在视口内（IntersectionObserver 应已处理）
+                // 此处仅作为兜底：如果图片已进入视口但未加载，则直接设置
+                var rect = img.getBoundingClientRect();
+                var inViewport = rect.top < window.innerHeight + 500 && rect.bottom > -500;
+                if (inViewport) {
+                    img.src = realSrc;
+                    img.dataset.loaded = '1';
+                    fixed++;
+                }
             }
         });
 
-        console.log('已修复', lazyImages.length, '张懒加载图片');
+        if (fixed > 0) {
+            console.log('兜底修复了', fixed, '张图片');
+        }
     }
 
-    // 多种时机尝试修复
+    // 延迟执行，优先让 IntersectionObserver 处理
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', fixImages);
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(fixImages, 2000);
+        });
     } else {
-        fixImages();
+        setTimeout(fixImages, 2000);
     }
 
-    // 延迟再次检查
-    setTimeout(fixImages, 1000);
-    setTimeout(fixImages, 3000);
+    // 5秒后再次检查
+    setTimeout(fixImages, 5000);
 
-    // 监听DOM变化，处理动态添加的图片
+    // 监听 DOM 变化，处理动态添加的图片
     if (typeof MutationObserver !== 'undefined') {
-        const observer = new MutationObserver(function(mutations) {
+        var observer = new MutationObserver(function(mutations) {
+            var hasNewImages = false;
             mutations.forEach(function(mutation) {
                 if (mutation.addedNodes) {
                     mutation.addedNodes.forEach(function(node) {
-                        if (node.nodeName === 'IMG' && node.getAttribute('data-raw-src')) {
-                            const realSrc = node.getAttribute('data-raw-src');
-                            if (realSrc && realSrc !== node.src) {
-                                node.src = realSrc;
-                            }
+                        if (node.nodeName === 'IMG' && node.getAttribute('data-raw-src') && !node.dataset.loaded) {
+                            hasNewImages = true;
                         }
-                        // 检查子元素
                         if (node.querySelectorAll) {
-                            const imgs = node.querySelectorAll('img[data-raw-src]');
-                            imgs.forEach(function(img) {
-                                const realSrc = img.getAttribute('data-raw-src');
-                                if (realSrc && realSrc !== img.src) {
-                                    img.src = realSrc;
-                                }
-                            });
+                            var imgs = node.querySelectorAll('img[data-raw-src]');
+                            if (imgs.length > 0) hasNewImages = true;
                         }
                     });
                 }
             });
+            if (hasNewImages) {
+                setTimeout(fixImages, 100);
+            }
         });
 
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
+        if (document.body) {
+            observer.observe(document.body, { childList: true, subtree: true });
+        } else {
+            document.addEventListener('DOMContentLoaded', function() {
+                observer.observe(document.body, { childList: true, subtree: true });
+            });
+        }
     }
 
 })();

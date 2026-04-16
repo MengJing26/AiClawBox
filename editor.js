@@ -12,7 +12,6 @@
         BACKUP_KEY: 'aiclawbox_editor_backup',
         MAX_BACKUP: 5,
         MAX_STORAGE_SIZE: 4 * 1024 * 1024, // 4MB 最大存储限制
-        ITEMS_PER_PAGE: 18, // 每页显示数量
         ANIMATION_DURATION: 200, // 动画持续时间(ms)
         TOAST_DURATION: 2000 // 提示显示时间(ms)
     };
@@ -132,6 +131,12 @@
 
     // ==================== 数据管理 ====================
     const dataManager = {
+        // 清理分类名称中的emoji图标
+        cleanCategoryName(name) {
+            const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]\s*/gu;
+            return name.replace(emojiRegex, '').trim();
+        },
+
         // 从页面提取数据
         extractFromPage() {
             const categories = [];
@@ -141,17 +146,27 @@
 
             menuItems.forEach((menuItem, index) => {
                 const tabId = menuItem.getAttribute('data-id');
-                const categoryName = menuItem.querySelector('.amz-peg-menu-item').textContent.trim();
+                const menuText = menuItem.querySelector('.amz-peg-menu-item').textContent.trim();
 
-                console.log(`处理分类 ${index}:`, categoryName, 'ID:', tabId);
+                console.log(`处理分类 ${index}:`, menuText, 'ID:', tabId);
+
+                // 提取分类图标（检查是否有自定义图片图标）
+                let categoryIcon = '';
+                const menuIconImg = menuItem.querySelector('.amz-peg-menu-item img');
+                if (menuIconImg) {
+                    categoryIcon = menuIconImg.getAttribute('src') || '';
+                }
+
+                // 清理分类名称,移除emoji图标
+                const categoryName = this.cleanCategoryName(menuText);
 
                 const tabContent = document.querySelector(`#${tabId}`);
                 if (!tabContent) {
                     console.warn(`未找到分类内容区域: #${tabId}`);
-                    // 即使找不到内容区域，也要保留这个分类（可能是空分类）
                     categories.push({
                         id: tabId,
                         name: categoryName,
+                        icon: categoryIcon,
                         items: []
                     });
                     return;
@@ -181,6 +196,7 @@
                 categories.push({
                     id: tabId,
                     name: categoryName,
+                    icon: categoryIcon,
                     items: items
                 });
             });
@@ -601,7 +617,7 @@
                 categoryEl.className = 'editor-category';
                 categoryEl.innerHTML = `
                     <div class="editor-category-header">
-                        <div class="editor-category-name">${utils.escapeHtml(category.name)}</div>
+                        <div class="editor-category-name">${category.icon ? `<img src="${utils.processImagePath(category.icon)}" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; border-radius: 3px; object-fit: cover;">` : ''}${utils.escapeHtml(category.name)}</div>
                         <div class="editor-category-actions">
                             <button class="editor-btn editor-btn-sm editor-btn-primary" data-action="addItem" data-cat="${catIndex}">+ 添加</button>
                             <button class="editor-btn editor-btn-sm editor-btn-warning" data-action="editCategory" data-cat="${catIndex}">编辑</button>
@@ -726,11 +742,13 @@
         // 添加分类
         addCategory() {
             modal.show('添加分类', {
-                name: ''
+                name: '',
+                icon: ''
             }, (data) => {
                 state.currentData.categories.push({
                     id: utils.generateId(),
                     name: data.name,
+                    icon: data.icon || '',
                     items: []
                 });
                 this.render();
@@ -740,10 +758,14 @@
         // 编辑分类
         editCategory(catIndex) {
             const category = state.currentData.categories[catIndex];
+            const originalIcon = category.icon; // 保存原始图标
             modal.show('编辑分类', {
-                name: category.name
+                name: category.name,
+                icon: category.icon || ''
             }, (data) => {
                 category.name = data.name;
+                // 只有当用户明确修改了图标时才更新,否则保留原图标
+                category.icon = data.icon || originalIcon || '';
                 this.render();
             });
         },
@@ -789,13 +811,19 @@
         // 编辑项目
         editItem(catIndex, itemIndex) {
             const item = state.currentData.categories[catIndex].items[itemIndex];
+            const originalIcon = item.icon; // 保存原始图标
             modal.show('编辑项目', {
                 title: item.title,
                 url: item.url,
                 description: item.description,
                 icon: item.icon
             }, (data) => {
-                Object.assign(item, data);
+                // 更新项目数据,但保留原图标(如果用户没有修改)
+                item.title = data.title;
+                item.url = data.url;
+                item.description = data.description;
+                // 只有当用户明确修改了图标时才更新,否则保留原图标
+                item.icon = data.icon || originalIcon || '';
                 this.render();
             });
         },
@@ -828,6 +856,7 @@
             if (saveSuccess) {
                 // 保存成功，更新页面
                 pageRenderer.render(state.currentData);
+                state.originalData = utils.deepClone(state.currentData);
                 this.hide();
             } else {
                 // 保存失败，询问用户是否继续
@@ -855,7 +884,7 @@
         },
 
         show(title, data, onSave) {
-            const isCategory = Object.keys(data).length === 1;
+            const isCategory = !data.hasOwnProperty('url');
 
             this.element.innerHTML = `
                 <div class="editor-modal-content">
@@ -869,7 +898,20 @@
                                 <input type="text" class="editor-form-input" id="modalName" value="${utils.escapeHtml(data.name || '')}" placeholder="${isCategory ? '例如：常用工具' : '例如：GitHub'}" required>
                                 <div class="editor-form-hint" style="font-size: 12px; color: #999; margin-top: 4px;">${isCategory ? '请输入分类的显示名称' : '请输入项目的显示名称'}</div>
                             </div>
-                            ${!isCategory ? `
+                            ${isCategory ? `
+                                <div class="editor-form-group">
+                                    <label class="editor-form-label">分类图标</label>
+                                    <div class="editor-icon-upload">
+                                        <input type="url" class="editor-form-input" id="modalCategoryIcon" value="${utils.escapeHtml(data.icon || '')}" placeholder="输入图片URL或上传本地图片">
+                                        <input type="file" id="modalCategoryIconFile" accept="image/*" style="display: none;">
+                                        <button type="button" class="editor-btn editor-btn-sm editor-btn-primary" id="uploadCategoryIconBtn">上传图片</button>
+                                    </div>
+                                    <div class="editor-form-hint" style="font-size: 12px; color: #999; margin-top: 4px;">可选，支持URL或本地上传。不设置则根据分类名称自动匹配图标</div>
+                                    <div class="editor-icon-preview" id="categoryIconPreview" style="margin-top: 10px; ${data.icon ? '' : 'display: none;'}">
+                                        <img src="${utils.escapeHtml(data.icon || '')}" style="max-width: 100px; max-height: 100px; border: 1px solid #ddd; border-radius: 4px;">
+                                    </div>
+                                </div>
+                            ` : `
                                 <div class="editor-form-group">
                                     <label class="editor-form-label">项目链接 <span style="color: #ff4d4f;">*</span></label>
                                     <input type="url" class="editor-form-input" id="modalUrl" value="${utils.escapeHtml(data.url || '')}" placeholder="https://example.com" required>
@@ -892,7 +934,7 @@
                                         <img src="${utils.escapeHtml(data.icon || '')}" style="max-width: 100px; max-height: 100px; border: 1px solid #ddd; border-radius: 4px;">
                                     </div>
                                 </div>
-                            ` : ''}
+                            `}
                         </div>
                     </div>
                     <div class="editor-modal-footer">
@@ -907,12 +949,14 @@
             // 绑定事件
             this.element.querySelector('#modalCancel').onclick = () => this.hide();
             
-            // 图片上传功能
-            if (!isCategory) {
-                const iconInput = this.element.querySelector('#modalIcon');
-                const iconFile = this.element.querySelector('#modalIconFile');
-                const uploadBtn = this.element.querySelector('#uploadIconBtn');
-                const iconPreview = this.element.querySelector('#iconPreview');
+            // 图片上传功能（分类和项目通用）
+            const setupIconUpload = (inputId, fileId, btnId, previewId) => {
+                const iconInput = this.element.querySelector(`#${inputId}`);
+                const iconFile = this.element.querySelector(`#${fileId}`);
+                const uploadBtn = this.element.querySelector(`#${btnId}`);
+                const iconPreview = this.element.querySelector(`#${previewId}`);
+                
+                if (!iconInput || !iconFile || !uploadBtn) return;
                 
                 // 点击上传按钮
                 uploadBtn.onclick = () => iconFile.click();
@@ -922,40 +966,28 @@
                     const file = e.target.files[0];
                     if (!file) return;
                     
-                    // 检查文件类型
                     if (!file.type.startsWith('image/')) {
                         utils.showToast('请选择图片文件！', 'warning');
                         return;
                     }
                     
-                    // 检查文件大小（限制2MB）
                     if (file.size > 2 * 1024 * 1024) {
                         utils.showToast('图片大小不能超过2MB！', 'warning');
                         return;
                     }
                     
-                    // 生成文件名（使用时间戳）
                     const ext = file.name.split('.').pop();
                     const fileName = `icon_${Date.now()}.${ext}`;
-                    
-                    // 使用本地路径
                     const localPath = `tupian/${fileName}`;
                     
-                    // 读取文件并保存
                     const reader = new FileReader();
                     reader.onload = (event) => {
-                        // 保存到LocalStorage（临时方案）
                         try {
                             const imageData = event.target.result;
                             localStorage.setItem(`img_${fileName}`, imageData);
-                            
-                            // 设置路径
                             iconInput.value = localPath;
-                            
-                            // 显示预览
                             iconPreview.style.display = 'block';
                             iconPreview.innerHTML = `<img src="${imageData}" style="max-width: 100px; max-height: 100px; border: 1px solid #ddd; border-radius: 4px;">`;
-                            
                             utils.showToast('图片已上传！', 'success');
                         } catch (err) {
                             utils.showToast('图片保存失败！', 'error');
@@ -968,7 +1000,6 @@
                 iconInput.oninput = () => {
                     const url = iconInput.value.trim();
                     if (url) {
-                        // 检查是否是本地图片
                         if (url.startsWith('tupian/')) {
                             const fileName = url.split('/').pop();
                             const imageData = localStorage.getItem(`img_${fileName}`);
@@ -984,6 +1015,12 @@
                         iconPreview.style.display = 'none';
                     }
                 };
+            };
+            
+            if (isCategory) {
+                setupIconUpload('modalCategoryIcon', 'modalCategoryIconFile', 'uploadCategoryIconBtn', 'categoryIconPreview');
+            } else {
+                setupIconUpload('modalIcon', 'modalIconFile', 'uploadIconBtn', 'iconPreview');
             }
             
             this.element.querySelector('#modalSave').onclick = () => {
@@ -998,7 +1035,9 @@
                     return;
                 }
 
-                if (!isCategory) {
+                if (isCategory) {
+                    result.icon = this.element.querySelector('#modalCategoryIcon') ? this.element.querySelector('#modalCategoryIcon').value.trim() : '';
+                } else {
                     result.url = this.element.querySelector('#modalUrl').value.trim();
                     result.description = this.element.querySelector('#modalDescription').value.trim();
                     result.icon = this.element.querySelector('#modalIcon').value.trim();
@@ -1010,7 +1049,6 @@
                         return;
                     }
 
-                    // 简单的URL格式验证
                     if (!result.url.startsWith('http://') && !result.url.startsWith('https://')) {
                         utils.showToast('链接格式不正确，请以 http:// 或 https:// 开头', 'warning');
                         this.element.querySelector('#modalUrl').focus();
@@ -1054,15 +1092,21 @@
             '交易所': '📊'
         },
 
-        // 获取分类图标
-        getCategoryIcon(name) {
+        // 获取分类图标（支持自定义图片图标）
+        getCategoryIcon(category) {
+            // 如果分类有自定义图片图标
+            if (category.icon) {
+                const iconSrc = utils.processImagePath(category.icon);
+                return `<img src="${iconSrc}" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 2px; border-radius: 3px; object-fit: cover;">`;
+            }
             // 检查名称是否已经包含emoji图标
+            const name = category.name || '';
             const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
             if (emojiRegex.test(name)) {
-                // 如果已经包含图标，返回空字符串
                 return '';
             }
-            return this.categoryIcons[name] || '📁';
+            const cleanName = this.cleanCategoryName(name);
+            return this.categoryIcons[cleanName] || '📁';
         },
         
         // 清理分类名称中的图标
@@ -1076,10 +1120,33 @@
             // 更新顶部导航菜单
             this.updateTopMenu(data);
             
-            // 更新内容区域
+            // 更新内容区域（不分页，全部展示）
             this.updateContent(data);
             
+            // 重新初始化图片懒加载（重建DOM后新的img[data-raw-src]需要被观察）
+            this.reinitLazyLoad();
+            
             utils.showToast('页面已更新！', 'success');
+        },
+        
+        // 重新初始化图片懒加载
+        reinitLazyLoad() {
+            const imgList = document.querySelectorAll('.amz-body img[data-raw-src]');
+            if (imgList.length === 0) return;
+            
+            const io = new IntersectionObserver(
+                function(entries, ob) {
+                    entries.forEach(function(entry) {
+                        if (Math.max(entry.intersectionRatio, 0) !== 0) {
+                            entry.target.src = entry.target.dataset.rawSrc;
+                            io.unobserve(entry.target);
+                        }
+                    });
+                },
+                { rootMargin: '500px', threshold: 0.1 }
+            );
+            
+            imgList.forEach(function(img) { io.observe(img); });
         },
 
         updateTopMenu(data) {
@@ -1088,10 +1155,8 @@
 
             menu.innerHTML = '';
             data.categories.forEach((category, index) => {
-                // 清理分类名称，移除可能存在的图标
                 const cleanName = this.cleanCategoryName(category.name);
-                // 获取对应的图标
-                const icon = this.getCategoryIcon(cleanName);
+                const icon = this.getCategoryIcon(category);
                 
                 const li = document.createElement('li');
                 li.setAttribute('data-sdk-index', index);
@@ -1110,20 +1175,15 @@
             });
         },
 
+
         updateContent(data) {
             const previewContent = document.querySelector('.amz-preview-content');
             if (!previewContent) return;
 
             previewContent.innerHTML = '';
             data.categories.forEach((category) => {
-                // 清理分类名称，移除可能存在的图标
                 const cleanName = this.cleanCategoryName(category.name);
-                // 获取对应的图标
-                const icon = this.getCategoryIcon(cleanName);
-                
-                // 计算需要多少页（每个最多18个）
-                const itemsPerPage = CONFIG.ITEMS_PER_PAGE;
-                const totalPages = Math.ceil(category.items.length / itemsPerPage);
+                const icon = this.getCategoryIcon(category);
                 
                 const wrapper = document.createElement('div');
                 wrapper.innerHTML = `
@@ -1134,7 +1194,6 @@
                                     <div class="el-scrollbar__view" style="">
                                         <div class="amz-tab-nav" data-style="0" id="">
                                             <span class="amz-tab-item" data-font-bold="true" data-sdk-report="1" data-sdk-position="2" data-sdk-index="${utils.escapeHtml(cleanName)}-0" style="color: rgb(60, 60, 60);">${icon} ${utils.escapeHtml(cleanName)}</span>
-                                            ${totalPages > 1 ? `<div class="pagination-nav" style="display: inline-flex; align-items: center; margin-left: 20px; gap: 8px;"></div>` : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -1146,87 +1205,16 @@
 
                 const ul = wrapper.querySelector('ul.amz-show');
                 
-                // 如果有分页,添加分页导航按钮
-                if (totalPages > 1) {
-                    const paginationNav = wrapper.querySelector('.pagination-nav');
-                    
-                    // 添加分页按钮
-                    for (let page = 1; page <= totalPages; page++) {
-                        const pageBtn = document.createElement('button');
-                        pageBtn.className = `pagination-btn ${page === 1 ? 'active' : ''}`;
-                        pageBtn.textContent = page;
-                        pageBtn.style.cssText = `
-                            padding: 4px 12px;
-                            border: 1px solid #ddd;
-                            background: ${page === 1 ? '#1890ff' : '#fff'};
-                            color: ${page === 1 ? '#fff' : '#333'};
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 14px;
-                            transition: all 0.3s;
-                        `;
-                        
-                        pageBtn.onclick = () => {
-                            // 更新按钮状态
-                            paginationNav.querySelectorAll('.pagination-btn').forEach(btn => {
-                                btn.classList.remove('active');
-                                btn.style.background = '#fff';
-                                btn.style.color = '#333';
-                            });
-                            pageBtn.classList.add('active');
-                            pageBtn.style.background = '#1890ff';
-                            pageBtn.style.color = '#fff';
-                            
-                            // 显示对应页的内容
-                            this.showPage(category.items, page, itemsPerPage, ul);
-                        };
-                        
-                        paginationNav.appendChild(pageBtn);
-                    }
-                }
-                
-                // 显示第一页内容
-                this.showPage(category.items, 1, itemsPerPage, ul);
+                // 直接显示所有内容项（不分页）
+                const fragment = document.createDocumentFragment();
+                category.items.forEach((item, index) => {
+                    const li = this.createItemElement(item, index);
+                    fragment.appendChild(li);
+                });
+                ul.appendChild(fragment);
 
                 previewContent.appendChild(wrapper.firstElementChild);
             });
-        },
-        
-        // 显示指定页的内容
-        showPage(items, page, itemsPerPage, ul) {
-            // 添加淡出效果
-            ul.style.opacity = '0';
-            ul.style.transition = `opacity ${CONFIG.ANIMATION_DURATION / 1000}s ease`;
-            
-            setTimeout(() => {
-                ul.innerHTML = '';
-                
-                const startIndex = (page - 1) * itemsPerPage;
-                const endIndex = Math.min(startIndex + itemsPerPage, items.length);
-                const pageItems = items.slice(startIndex, endIndex);
-                
-                // 判断是否需要固定框架显示(只有超过itemsPerPage个才需要)
-                const needFixedFrame = items.length > itemsPerPage;
-                
-                // 如果需要固定框架,始终显示itemsPerPage个位置;否则按实际数量显示
-                const displayCount = needFixedFrame ? itemsPerPage : pageItems.length;
-                
-                // 使用DocumentFragment优化DOM操作
-                const fragment = document.createDocumentFragment();
-                
-                for (let i = 0; i < displayCount; i++) {
-                    const item = pageItems[i];
-                    const li = this.createItemElement(item, startIndex + i);
-                    fragment.appendChild(li);
-                }
-                
-                ul.appendChild(fragment);
-                
-                // 添加淡入效果
-                requestAnimationFrame(() => {
-                    ul.style.opacity = '1';
-                });
-            }, CONFIG.ANIMATION_DURATION);
         },
         
         // 创建项目元素
@@ -1239,34 +1227,17 @@
             li.setAttribute('data-sdk-partner-id', '0');
             li.setAttribute('data-sdk-pinned', '0');
             
-            if (item) {
-                // 有内容的项目
-                li.innerHTML = `
-                    <a href="${utils.escapeHtml(item.url)}" target="_blank" data-sdk-report="1" click-action="1" click-image="" rel="nofollow" class="amz-item-2" style="padding: 10px 16px;">
-                        <div class="amz-item-logo">
-                            <img src="${utils.processImagePath(item.icon)}" alt="${utils.escapeHtml(item.title)}-图标" loading="lazy">
-                        </div>
-                        <div class="amz-intro">
-                            <p class="amz-item-title" style="color: rgb(68, 68, 68);">${utils.escapeHtml(item.title)}</p>
-                            <p class="amz-item-intro description" title="${utils.escapeHtml(item.description)}">${utils.escapeHtml(item.description)}</p>
-                        </div>
-                    </a>
-                `;
-            } else {
-                // 空白占位框架
-                li.setAttribute('data-empty', 'true');
-                li.innerHTML = `
-                    <div class="amz-item-2" style="padding: 10px 16px; opacity: 0; pointer-events: none;">
-                        <div class="amz-item-logo">
-                            <img src="https://img.amz123.com/upload/index_icon/20210824/empty.png" alt="占位">
-                        </div>
-                        <div class="amz-intro">
-                            <p class="amz-item-title" style="color: rgb(68, 68, 68);">占位</p>
-                            <p class="amz-item-intro description" title="占位">占位</p>
-                        </div>
+            li.innerHTML = `
+                <a href="${utils.escapeHtml(item.url)}" target="_blank" data-sdk-report="1" click-action="1" click-image="" rel="nofollow" class="amz-item-2" style="padding: 10px 16px;">
+                    <div class="amz-item-logo">
+                        <img src="https://img.amz123.com/upload/index_icon/20210824/empty.png" alt="${utils.escapeHtml(item.title)}-图标" data-raw-src="${utils.processImagePath(item.icon)}" />
                     </div>
-                `;
-            }
+                    <div class="amz-intro">
+                        <p class="amz-item-title" style="color: rgb(68, 68, 68);">${utils.escapeHtml(item.title)}</p>
+                        <p class="amz-item-intro description" title="${utils.escapeHtml(item.description)}">${utils.escapeHtml(item.description)}</p>
+                    </div>
+                </a>
+            `;
             
             return li;
         }
