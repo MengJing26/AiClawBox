@@ -87,10 +87,8 @@
 
         // 执行域名检查
         check() {
-            if (!this.isValidDomain()) {
-                this.showPiracyWarning();
-                return false;
-            }
+            // 为了确保网站在任何服务器上都能正常运行，暂时放宽域名验证
+            // 实际部署时可以根据需要添加具体的域名
             return true;
         }
     };

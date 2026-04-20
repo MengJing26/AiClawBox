@@ -71,4 +71,20 @@
                     }
                 });
             })();
+            </script>
+            
+            <!-- 修改底部文字 -->
+            <script>
+            (function() {
+                // 等待页面完全加载
+                window.addEventListener('load', function() {
+                    // 查找包含"智装OS"的元素并修改
+                    var elements = document.querySelectorAll('*');
+                    elements.forEach(function(element) {
+                        if (element.textContent && element.textContent.includes('智装OS')) {
+                            element.textContent = element.textContent.replace('智装OS', 'AI智装啦OS');
+                        }
+                    });
+                });
+            })();
             </script></div>            </body></html>

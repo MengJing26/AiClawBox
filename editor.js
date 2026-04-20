@@ -13,7 +13,10 @@
         MAX_BACKUP: 5,
         MAX_STORAGE_SIZE: 4 * 1024 * 1024, // 4MB 最大存储限制
         ANIMATION_DURATION: 200, // 动画持续时间(ms)
-        TOAST_DURATION: 2000 // 提示显示时间(ms)
+        TOAST_DURATION: 2000, // 提示显示时间(ms)
+        INDEXEDDB_NAME: 'AiClawBox',
+        INDEXEDDB_VERSION: 1,
+        INDEXEDDB_STORE: 'editor_data'
     };
 
     // ==================== 状态管理 ====================
@@ -84,6 +87,115 @@
                     setTimeout(() => toast.remove(), 300);
                 }, CONFIG.TOAST_DURATION);
             });
+        },
+
+        // IndexedDB 操作
+        indexedDB: {
+            // 打开数据库
+            openDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(CONFIG.INDEXEDDB_NAME, CONFIG.INDEXEDDB_VERSION);
+
+                    request.onerror = () => {
+                        reject('打开数据库失败');
+                    };
+
+                    request.onsuccess = () => {
+                        resolve(request.result);
+                    };
+
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains(CONFIG.INDEXEDDB_STORE)) {
+                            db.createObjectStore(CONFIG.INDEXEDDB_STORE);
+                        }
+                    };
+                });
+            },
+
+            // 保存数据
+            async save(data) {
+                try {
+                    const db = await this.openDB();
+                    return new Promise((resolve, reject) => {
+                        const transaction = db.transaction([CONFIG.INDEXEDDB_STORE], 'readwrite');
+                        const store = transaction.objectStore(CONFIG.INDEXEDDB_STORE);
+                        const request = store.put(data, 'main');
+
+                        request.onsuccess = () => {
+                            resolve(true);
+                        };
+
+                        request.onerror = () => {
+                            reject('保存到 IndexedDB 失败');
+                        };
+                    });
+                } catch (e) {
+                    console.error('IndexedDB 保存失败:', e);
+                    return false;
+                }
+            },
+
+            // 加载数据
+            async load() {
+                try {
+                    const db = await this.openDB();
+                    return new Promise((resolve, reject) => {
+                        const transaction = db.transaction([CONFIG.INDEXEDDB_STORE], 'readonly');
+                        const store = transaction.objectStore(CONFIG.INDEXEDDB_STORE);
+                        const request = store.get('main');
+
+                        request.onsuccess = () => {
+                            resolve(request.result || null);
+                        };
+
+                        request.onerror = () => {
+                            reject('从 IndexedDB 加载失败');
+                        };
+                    });
+                } catch (e) {
+                    console.error('IndexedDB 加载失败:', e);
+                    return null;
+                }
+            }
+        },
+
+        // 导出数据
+        exportData(data) {
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `aiclawbox-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            utils.showToast('数据导出成功！', 'success');
+        },
+
+        // 导入数据
+        importData(callback) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        callback(data);
+                    } catch (e) {
+                        utils.showToast('文件格式错误，导入失败！', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
         },
 
         // 确认对话框
@@ -205,8 +317,8 @@
             return { categories };
         },
 
-        // 保存到 LocalStorage
-        save(data) {
+        // 保存数据（同时保存到 localStorage 和 IndexedDB）
+        async save(data) {
             try {
                 // 检查存储空间
                 if (!this.checkStorageSpace()) {
@@ -225,7 +337,12 @@
                     return false;
                 }
                 
+                // 保存到 localStorage
                 localStorage.setItem(CONFIG.STORAGE_KEY, dataStr);
+                
+                // 保存到 IndexedDB
+                await utils.indexedDB.save(data);
+                
                 utils.showToast('保存成功！', 'success');
                 return true;
             } catch (e) {
@@ -239,6 +356,7 @@
                     try {
                         // 重试保存
                         localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
+                        await utils.indexedDB.save(data);
                         utils.showToast('保存成功！', 'success');
                         return true;
                     } catch (retryError) {
@@ -296,14 +414,37 @@
             }
         },
 
-        // 从 LocalStorage 加载
-        load() {
+        // 加载数据（优先从 IndexedDB 加载，失败则从 localStorage 加载）
+        async load() {
             try {
-                const data = localStorage.getItem(CONFIG.STORAGE_KEY);
-                return data ? JSON.parse(data) : null;
+                // 优先从 IndexedDB 加载
+                const indexedData = await utils.indexedDB.load();
+                if (indexedData) {
+                    // 将 IndexedDB 数据同步到 localStorage
+                    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(indexedData));
+                    return indexedData;
+                }
+                
+                // 如果 IndexedDB 没有数据，从 localStorage 加载
+                const localData = localStorage.getItem(CONFIG.STORAGE_KEY);
+                if (localData) {
+                    const parsedData = JSON.parse(localData);
+                    // 将 localStorage 数据同步到 IndexedDB
+                    await utils.indexedDB.save(parsedData);
+                    return parsedData;
+                }
+                
+                return null;
             } catch (e) {
                 console.error('加载失败:', e);
-                return null;
+                // 出错时尝试从 localStorage 加载
+                try {
+                    const localData = localStorage.getItem(CONFIG.STORAGE_KEY);
+                    return localData ? JSON.parse(localData) : null;
+                } catch (localError) {
+                    console.error('localStorage 加载失败:', localError);
+                    return null;
+                }
             }
         },
 
@@ -397,6 +538,8 @@
             this.element.innerHTML = `
                 <div class="editor-context-menu-item" data-action="edit">📝 进入编辑模式</div>
                 <div class="editor-context-menu-item" data-action="reset">🔄 恢复上次数据</div>
+                <div class="editor-context-menu-item" data-action="export">💾 导出数据</div>
+                <div class="editor-context-menu-item" data-action="import">📤 导入数据</div>
                 <div class="editor-context-menu-item" data-action="cleanup">🗑️ 清理存储空间</div>
             `;
             document.body.appendChild(this.element);
@@ -500,10 +643,38 @@
                 case 'reset':
                     this.resetData();
                     break;
+                case 'export':
+                    this.exportData();
+                    break;
+                case 'import':
+                    this.importData();
+                    break;
                 case 'cleanup':
                     this.cleanupStorage();
                     break;
             }
+        },
+
+        async exportData() {
+            const data = await dataManager.load();
+            if (data) {
+                utils.exportData(data);
+            } else {
+                utils.showToast('没有可导出的数据！', 'warning');
+            }
+        },
+
+        importData() {
+            utils.importData(async (data) => {
+                const confirmed = await utils.confirm('确定要导入数据吗？这将覆盖当前所有内容。');
+                if (confirmed) {
+                    const success = await dataManager.save(data);
+                    if (success) {
+                        // 重新加载页面以显示导入的数据
+                        location.reload();
+                    }
+                }
+            });
         },
 
         async resetData() {
@@ -849,9 +1020,9 @@
         },
 
         // 保存
-        save() {
+        async save() {
             // 先尝试保存
-            const saveSuccess = dataManager.save(state.currentData);
+            const saveSuccess = await dataManager.save(state.currentData);
             
             if (saveSuccess) {
                 // 保存成功，更新页面
@@ -1247,20 +1418,22 @@
     function init() {
         // 等待 DOM 加载完成
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initEditor);
+            document.addEventListener('DOMContentLoaded', async () => {
+                await initEditor();
+            });
         } else {
             initEditor();
         }
     }
 
-    function initEditor() {
+    async function initEditor() {
         // 初始化各模块
         contextMenu.init();
         editorPanel.init();
         modal.init();
 
         // 检查是否有保存的数据
-        const savedData = dataManager.load();
+        const savedData = await dataManager.load();
         if (savedData) {
             pageRenderer.render(savedData);
         }
